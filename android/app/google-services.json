@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1062915225975",
+    "project_id": "tokri-cae59",
+    "storage_bucket": "tokri-cae59.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1062915225975:android:0a2f7f93b3f5baeedf0972",
+        "android_client_info": {
+          "package_name": "com.example.flutter_projects"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1sQPp7-A0G9E8HatFhQz9k81HQkdaFQU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
