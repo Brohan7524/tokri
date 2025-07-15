@@ -1,17 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'signup_screen.dart';
-import 'splash_screen.dart';
+import 'dashboard_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class AdminLoginScreen extends StatefulWidget {
+  const AdminLoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<AdminLoginScreen> createState() => _AdminLoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   bool loading = false;
@@ -20,57 +17,12 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
 
-    if (!email.contains('@') || password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("❗ Enter a valid email and password (min 6 characters)"),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
-    setState(() => loading = true);
-    try {
-      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      final uid = credential.user?.uid;
-      if (uid == null) throw FirebaseAuthException(code: 'INVALID_USER', message: 'Invalid user');
-
-      DocumentSnapshot doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-
-      // 🔁 Retry if doc not found immediately
-      if (!doc.exists || doc.data() == null) {
-        await Future.delayed(const Duration(seconds: 1));
-        doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      }
-
-      if (!doc.exists || doc.data() == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("⚠️ No user record found in Firestore.")),
-        );
-        FirebaseAuth.instance.signOut();
-        return;
-      }
-
-      // ✅ Block admin login
-      if (doc['isAdmin'] == true) {
-        await FirebaseAuth.instance.signOut();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("⛔ Admin accounts cannot log in from the user app."),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-        return;
-      }
+    if (email == 'admin@tokri.com' && password == '123456') {
+      setState(() => loading = true);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("✅ Logged in successfully!"),
+          content: Text("✅ Admin logged in successfully!"),
           backgroundColor: Color(0xFF68B984),
           behavior: SnackBarBehavior.floating,
           duration: Duration(seconds: 2),
@@ -78,19 +30,22 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       await Future.delayed(const Duration(milliseconds: 1000));
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const SplashScreen()),
-      );
-    } on FirebaseAuthException catch (e) {
+
+      if (context.mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardScreen()),
+        );
+      }
+
+      setState(() => loading = false);
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message ?? "Login failed"),
+        const SnackBar(
+          content: Text("❌ Invalid admin credentials"),
           backgroundColor: Colors.redAccent,
         ),
       );
-    } finally {
-      setState(() => loading = false);
     }
   }
 
@@ -102,8 +57,11 @@ class _LoginScreenState extends State<LoginScreen> {
         backgroundColor: const Color(0xFFF2D974),
         elevation: 0,
         title: const Text(
-          "🔐 Login",
-          style: TextStyle(color: Color(0xFF2C3E50), fontWeight: FontWeight.bold),
+          "🔐 Admin Login",
+          style: TextStyle(
+            color: Color(0xFF2C3E50),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         centerTitle: true,
       ),
@@ -112,19 +70,30 @@ class _LoginScreenState extends State<LoginScreen> {
           padding: const EdgeInsets.all(24),
           child: SingleChildScrollView(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF4E6),
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
                   ),
                   child: Column(
                     children: [
                       const Text(
-                        "Login to Tokri",
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
+                        "Admin Login",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2C3E50),
+                        ),
                       ),
                       const SizedBox(height: 20),
                       TextField(
@@ -160,27 +129,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: loading ? null : login,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF68B984),
+                          foregroundColor: Colors.white,
                           minimumSize: const Size.fromHeight(50),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () => Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SignUpScreen()),
-                  ),
-                  child: const Text(
-                    "Don't have an account? Sign up",
-                    style: TextStyle(
-                      color: Color(0xFF8B4513),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      decoration: TextDecoration.underline,
-                    ),
                   ),
                 ),
               ],

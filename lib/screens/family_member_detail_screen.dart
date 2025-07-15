@@ -10,41 +10,83 @@ class FamilyMemberDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("${member.name}'s Profile")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("👤 Name: ${member.name}", style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text("🎂 Age: ${member.age} years"),
-            Text("📏 Height: ${member.height} cm"),
-            Text("⚖️ Weight: ${member.weight} kg"),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.calendar_month),
-              label: const Text("View Weekly Plan"),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const CombinedWeeklyPlanScreen(),
+      backgroundColor: const Color(0xFFFDF8F0), // Cream
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF2D974), // Soft Yellow
+        elevation: 0,
+        title: Text(
+          "${member.name}'s Profile",
+          style: const TextStyle(
+            color: Color(0xFF2C3E50),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Color(0xFF2C3E50)),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF4E6), // Pale Peach
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "👤 Name: ${member.name}",
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: const Color(0xFF2C3E50),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "🎂 Age: ${member.age} years",
+                style: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "📏 Height: ${member.height} cm",
+                style: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "⚖️ Weight: ${member.weight} kg",
+                style: const TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
+              ),
+              const SizedBox(height: 28),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.calendar_month),
+                label: const Text("View Weekly Plan"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF68B984), // Medium Green
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.auto_awesome),
-              label: const Text("Generate Nutrition Plan (Mock)"),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("🍎 AI model will be integrated here.")),
-                );
-              },
-            ),
-          ],
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const CombinedWeeklyPlanScreen(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/family_member.dart';
 import '../services/firestore_service.dart';
@@ -64,10 +65,19 @@ class ManageFamilyScreen extends StatelessWidget {
               );
 
               try {
+                // ✅ Add family member
                 await FirestoreService.addFamilyMember(member);
+
+                // ✅ Update flag only once
+                await FirebaseFirestore.instance.collection('users').doc(uid).update({
+                  'hasFamilyMembers': true,
+                });
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Family member added")),
                 );
+
+                // ✅ Clear inputs and close dialog
                 nameController.clear();
                 ageController.clear();
                 heightController.clear();
@@ -79,6 +89,7 @@ class ManageFamilyScreen extends StatelessWidget {
                 );
               }
             },
+
             child: const Text('Add'),
           ),
         ],

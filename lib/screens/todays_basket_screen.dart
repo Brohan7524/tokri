@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
-import '../services/api_service.dart'; // Flask API call
+import '../tokri_api/model.dart';
+ // You should place generateWeeklyBasket here
 
 class TodaysBasketScreen extends StatefulWidget {
   const TodaysBasketScreen({super.key});
@@ -27,7 +28,7 @@ class _TodaysBasketScreenState extends State<TodaysBasketScreen> {
       final members = await FirestoreService.getFamilyMembers().first;
       final familySize = members.length;
 
-      final basket = await fetchWeeklyBasket(familySize);
+      final basket = generateWeeklyBasket(familySize); // Using Dart version directly
       final today = basket[0]; // Only use Day 1
 
       final Map<String, int> result = {};
