@@ -33,6 +33,22 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
       for (var order in ordersSnapshot.docs) {
         final data = order.data();
 
+        // 🔍 Debug log
+        print("📦 Order ${order.id} data: $data");
+
+        // ✅ Correct delivery address extraction
+        String address;
+        if (data.containsKey('delivery_address')) {
+          final raw = data['delivery_address'];
+          if (raw != null && raw.toString().trim().isNotEmpty) {
+            address = raw.toString().trim();
+          } else {
+            address = '⚠️ Address Missing';
+          }
+        } else {
+          address = '❌ Address Not Found';
+        }
+
         ordersList.add({
           "userId": userDoc.id,
           "userName": userDoc.data()['name'] ?? 'Unknown',
@@ -43,6 +59,7 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
           "total_calories": data['total_calories'],
           "status": data['status'] ?? 'Pending',
           "family_member": data['family_member_name'] ?? 'N/A',
+          "address": address, // 👈 Cleaned and shown in UI
           "reference": order.reference,
         });
       }
@@ -58,7 +75,7 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
 
   Future<void> exportOrdersToCSV(BuildContext context) async {
     List<List<String>> rows = [
-      ['UserID', 'Member Name', 'Items', 'Total Price', 'Calories', 'Status', 'Timestamp']
+      ['UserID', 'Member Name', 'Items', 'Total Price', 'Calories', 'Status', 'Timestamp', 'Address']
     ];
 
     for (var order in allOrders) {
@@ -75,6 +92,7 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
         order['total_calories'].toString(),
         order['status'] ?? '',
         timestamp,
+        order['address'] ?? '',
       ]);
     }
 
@@ -131,6 +149,7 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
           final memberName = order['family_member'] ?? 'Unknown';
           final timestamp = (order['timestamp'] as Timestamp).toDate();
           final formattedDate = DateFormat('MMM d, yyyy hh:mm a').format(timestamp);
+          final address = order['address'] ?? 'Not provided';
 
           return Container(
             margin: const EdgeInsets.only(bottom: 16),
@@ -156,6 +175,8 @@ class _AllOrdersScreenState extends State<AllOrdersScreen> {
                         color: Color(0xFF2C3E50))),
                 const SizedBox(height: 4),
                 Text("🕒 $formattedDate", style: const TextStyle(color: Color(0xFF6B7280))),
+                const SizedBox(height: 4),
+                Text("📍 Address: $address", style: const TextStyle(color: Color(0xFF6B7280))),
                 const SizedBox(height: 10),
                 ...items.map((item) => Text(
                   "• ${item['name']} x${item['quantity']} (${item['calories']} cal)",

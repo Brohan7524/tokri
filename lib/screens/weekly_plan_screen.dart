@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/family_member.dart';
+import '../services/api_service.dart';
 import '../services/firestore_service.dart';
-import '../tokri_api/model.dart';
+
 
 class CombinedWeeklyPlanScreen extends StatefulWidget {
   const CombinedWeeklyPlanScreen({super.key});
@@ -28,7 +29,7 @@ class _CombinedWeeklyPlanScreenState extends State<CombinedWeeklyPlanScreen> {
       final members = await FirestoreService.getFamilyMembers().first;
       final familySize = members.length;
 
-      final basket = generateWeeklyBasket(familySize); // Use Dart function
+      final basket = await ApiService.fetchWeeklyBasket(familySize); // 🔁 Python API call
 
       Map<String, List<String>> plan = {};
       for (int i = 0; i < basket.length; i++) {
@@ -70,6 +71,7 @@ class _CombinedWeeklyPlanScreenState extends State<CombinedWeeklyPlanScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error loading data: $e")));
     }
   }
+
 
 
   @override

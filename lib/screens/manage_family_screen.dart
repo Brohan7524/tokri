@@ -4,11 +4,24 @@ import '../models/family_member.dart';
 import '../services/firestore_service.dart';
 import '../services/auth_service.dart';
 
-class ManageFamilyScreen extends StatelessWidget {
+class ManageFamilyScreen extends StatefulWidget {
+  const ManageFamilyScreen({super.key});
+
+  @override
+  State<ManageFamilyScreen> createState() => _ManageFamilyScreenState();
+}
+
+class _ManageFamilyScreenState extends State<ManageFamilyScreen> {
   final nameController = TextEditingController();
   final ageController = TextEditingController();
   final heightController = TextEditingController();
   final weightController = TextEditingController();
+
+  final genderOptions = ['Male', 'Female', 'Other'];
+  final activityOptions = ['Low', 'Moderate', 'High'];
+
+  String selectedGender = 'Male';
+  String selectedActivity = 'Moderate';
 
   void showAddDialog(BuildContext context) {
     showDialog(
@@ -27,6 +40,38 @@ class ManageFamilyScreen extends StatelessWidget {
               _customInput(ageController, 'Age', isNumber: true),
               _customInput(heightController, 'Height (cm)', isNumber: true),
               _customInput(weightController, 'Weight (kg)', isNumber: true),
+
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                value: selectedGender,
+                items: genderOptions.map((gender) {
+                  return DropdownMenuItem(value: gender, child: Text(gender));
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) setState(() => selectedGender = value);
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Gender',
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                value: selectedActivity,
+                items: activityOptions.map((level) {
+                  return DropdownMenuItem(value: level, child: Text(level));
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) setState(() => selectedActivity = value);
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Activity Level',
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
             ],
           ),
         ),
@@ -62,13 +107,12 @@ class ManageFamilyScreen extends StatelessWidget {
                 age: int.tryParse(ageController.text) ?? 0,
                 height: double.tryParse(heightController.text) ?? 0,
                 weight: double.tryParse(weightController.text) ?? 0,
+                gender: selectedGender,
+                activityLevel: selectedActivity,
               );
 
               try {
-                // ✅ Add family member
                 await FirestoreService.addFamilyMember(member);
-
-                // ✅ Update flag only once
                 await FirebaseFirestore.instance.collection('users').doc(uid).update({
                   'hasFamilyMembers': true,
                 });
@@ -77,11 +121,15 @@ class ManageFamilyScreen extends StatelessWidget {
                   const SnackBar(content: Text("Family member added")),
                 );
 
-                // ✅ Clear inputs and close dialog
+                // Clear inputs
                 nameController.clear();
                 ageController.clear();
                 heightController.clear();
                 weightController.clear();
+                setState(() {
+                  selectedGender = 'Male';
+                  selectedActivity = 'Moderate';
+                });
                 Navigator.pop(context);
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -89,7 +137,6 @@ class ManageFamilyScreen extends StatelessWidget {
                 );
               }
             },
-
             child: const Text('Add'),
           ),
         ],
@@ -144,11 +191,12 @@ class ManageFamilyScreen extends StatelessWidget {
                     ),
                   ),
                   subtitle: Text(
-                    "Age: ${member.age}, Height: ${member.height} cm, Weight: ${member.weight} kg",
+                    "Age: ${member.age}, Height: ${member.height} cm, Weight: ${member.weight} kg\n"
+                        "Gender: ${member.gender}, Activity: ${member.activityLevel}",
                     style: const TextStyle(color: Color(0xFF6B7280)),
                   ),
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Color(0xFF8B4513)), // Rust
+                    icon: const Icon(Icons.delete, color: Color(0xFF8B4513)),
                     onPressed: () => FirestoreService.deleteFamilyMember(member.id),
                   ),
                 ),
@@ -158,7 +206,7 @@ class ManageFamilyScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF68B984), // Medium Green
+        backgroundColor: const Color(0xFF68B984),
         foregroundColor: Colors.white,
         onPressed: () => showAddDialog(context),
         child: const Icon(Icons.add),

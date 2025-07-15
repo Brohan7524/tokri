@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
-import '../tokri_api/model.dart';
- // You should place generateWeeklyBasket here
 
 class TodaysBasketScreen extends StatefulWidget {
   const TodaysBasketScreen({super.key});
@@ -28,8 +27,8 @@ class _TodaysBasketScreenState extends State<TodaysBasketScreen> {
       final members = await FirestoreService.getFamilyMembers().first;
       final familySize = members.length;
 
-      final basket = generateWeeklyBasket(familySize); // Using Dart version directly
-      final today = basket[0]; // Only use Day 1
+      final basket = await ApiService.fetchWeeklyBasket(familySize);
+      final today = basket[0];
 
       final Map<String, int> result = {};
       final List<Map<String, dynamic>> items = [];
@@ -40,41 +39,24 @@ class _TodaysBasketScreenState extends State<TodaysBasketScreen> {
         }
       }
 
-      for (var veg in today['lunch']['vegetables']) {
-        addItem(veg.toString());
-      }
-      for (var veg in today['dinner']['vegetables']) {
-        addItem(veg.toString());
-      }
-
-      if (today['lunch']['pulse'] != null) {
-        addItem(today['lunch']['pulse'].toString());
-      }
-      if (today['dinner']['pulse'] != null) {
-        addItem(today['dinner']['pulse'].toString());
-      }
-
+      for (var veg in today['lunch']['vegetables']) addItem(veg.toString());
+      for (var veg in today['dinner']['vegetables']) addItem(veg.toString());
+      if (today['lunch']['pulse'] != null) addItem(today['lunch']['pulse'].toString());
+      if (today['dinner']['pulse'] != null) addItem(today['dinner']['pulse'].toString());
       if (today['breakfast']['sprouts'] != null) {
         String sproutName = today['breakfast']['sprouts'].toString().split(' (')[0];
         addItem(sproutName);
       }
-
-      for (var ing in today['cooking_ingredients']) {
-        addItem(ing.toString());
-      }
-
-      for (var fruit in today['breakfast']['fruits']) {
-        addItem(fruit.toString());
-      }
-
+      for (var ing in today['cooking_ingredients']) addItem(ing.toString());
+      for (var fruit in today['breakfast']['fruits']) addItem(fruit.toString());
       addItem(today['snack']['fruit'].toString());
 
       result.forEach((name, qty) {
         items.add({
           'name': name,
           'quantity': qty,
-          'calories': 100, // Placeholder
-          'price': 10,     // Placeholder
+          'calories': 100,
+          'price': 10,
         });
       });
 
@@ -93,9 +75,52 @@ class _TodaysBasketScreenState extends State<TodaysBasketScreen> {
     }
   }
 
+  Future<String?> promptForAddress(String? currentAddress) async {
+    final controller = TextEditingController(text: currentAddress ?? '');
+    return showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Enter Delivery Address"),
+        content: TextField(
+          controller: controller,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: "Flat no, Street, City, Pincode",
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text("Confirm"),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> placeOrder() async {
     final uid = AuthService.currentUserId;
     if (uid == null || availableItems.isEmpty) return;
+
+    final userDoc = FirebaseFirestore.instance.collection('users').doc(uid);
+    final userSnapshot = await userDoc.get();
+    String? savedAddress = userSnapshot.data()?['deliveryAddress'];
+
+    final enteredAddress = await promptForAddress(savedAddress);
+
+    if (enteredAddress == null || enteredAddress.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("❌ Address is required")),
+      );
+      return;
+    }
+
+    await userDoc.set({'deliveryAddress': enteredAddress}, SetOptions(merge: true));
 
     final timestamp = DateTime.now();
     List<Map<String, dynamic>> items = [];
@@ -118,17 +143,14 @@ class _TodaysBasketScreenState extends State<TodaysBasketScreen> {
       totalPrice += price * quantity;
     }
 
-    await FirebaseFirestore.instance
-        .collection("users")
-        .doc(uid)
-        .collection("orders")
-        .add({
+    await userDoc.collection("orders").add({
       "timestamp": timestamp,
       "items": items,
       "total_price": totalPrice,
       "total_calories": totalCalories,
       "status": "Pending",
       "family_member_name": "Combined",
+      "delivery_address": enteredAddress,
     });
 
     if (context.mounted) {

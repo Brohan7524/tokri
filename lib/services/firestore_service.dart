@@ -26,6 +26,8 @@ class FirestoreService {
       'age': member.age,
       'height': member.height,
       'weight': member.weight,
+      'gender': member.gender,
+      'activityLevel': member.activityLevel,
     });
   }
 
